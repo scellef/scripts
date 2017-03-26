@@ -3,6 +3,7 @@
 # Dependencies: bash 
 
 ### VARIABLES ###
+IFS=','
 variableName=''
 
 
@@ -33,9 +34,16 @@ function quit { prompt "Exiting..." ; exit 0 ;}
 
 
 ### PRIMARY FUNCTIONS ###
+function check_dependencies {
+  command -v color-test.sh 2> /dev/null >&2 || error "'color-test' not in your PATH."
+}
+
 function function_name {
 # Function purpose
+echo
 }
 
 
 ### MAIN ###
+check_dependencies
+function_name

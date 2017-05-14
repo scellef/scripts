@@ -49,10 +49,10 @@ exit
 
 
 ### HELPER FUNCTIONS ###
-function error { printf >&2 "[1;31mERROR: %s[0m\n" $* ;}
-function success { printf >&2 "[1;32mSUCCESS: %s[0m\n" $* ;}
-function warning { printf >&2 "[1;33mWARNING: %s[0m\n" $* ;}
-function prompt { printf >&2 "[1;36m%s[0m\n" $* ;}
+function error { IFS='\n' printf >&2 "[1;31mERROR: %s[0m\n" $* ;}
+function success { IFS='\n' printf >&2 "[1;32mSUCCESS: %s[0m\n" $* ;}
+function warning { IFS='\n' printf >&2 "[1;33mWARNING: %s[0m\n" $* ;}
+function prompt { IFS='\n' printf >&2 "[1;36m%s[0m\n" $* ;}
 function quit { prompt "Exiting..." ; exit 0 ;}
 
 
@@ -130,7 +130,7 @@ function confirm_group_info {
         "Manager(s): ${groupManager[*]}")
           read -p 'Enter the Group Manager(s): ' -a groupManager ; break ;;
         "Description: $groupDesc")
-          read -p 'Enter the Group Description: ' groupDesc ; break ;;
+          IFS='\n' read -p 'Enter the Group Description: ' groupDesc ; break ;;
         "Create group") 
           local confirmed="yes" ; break ;;
         "Abort") quit ; exit ;;

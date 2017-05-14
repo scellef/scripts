@@ -18,12 +18,13 @@ function usage {
   cat << EOF
 Usage: google-group-request.sh
        google-group-request.sh -h
-       google-group-request.sh -a
-       google-group-request.sh -t TICKET [-t TICKET ...]
-       google-group-request.sh -n NAME -o OWNER [-o OWNER2 ...] 
+       google-group-request.sh [-z] -a
+       google-group-request.sh [-z] -t TICKET [-t TICKET ...]
+       google-group-request.sh [-z] -n NAME -o OWNER [-o OWNER2 ...]
          [-m MANAGER [-m MANAGER2 ...]] [-d 'DESCRIPTION']
 
 Options:
+  -z    Runs through script without making any changes (NOOP)
   -a    Queries RT for new Google Group requests and iterates through them,
         interactively prompting for corrections
   -t    Specifies the RT ticket to gather information from and resolve
@@ -79,6 +80,7 @@ function parse_arguments {
          m) groupManager+=("$OPTARG") ;;
          d) groupDesc="$OPTARG" ;;
          h) usage ;;
+         z) dryRun="echo" ;;
         \?) error "Unknown option: -$OPTARG" ; usage ; exit 2 ;;
          :) error "-$OPTARG requires an argument." ; usage ; exit 2 ;;
       esac
@@ -180,27 +182,59 @@ function create_group {
   check_dependencies
   check_group_info
 
-  gam create group $groupName 2> /dev/null >&2 ; sleep 2
+  $dryRun gam create group $groupName name $groupName
+  if [ $? -ne 0 ] ; then
+    error "Group creation failed!"
+    exit 128
+  fi
+  sleep 1
   for owner in ${groupOwner[*]} ; do
-    gam update group $groupName add owner $owner  2> /dev/null >&2 ; sleep 2
+    $dryRun gam update group $groupName add owner $owner
+    if [ $? -ne 0 ] ; then
+      warning "Could not set '$owner' as owner of $groupName!"
+      errorOwner+=1
+    fi
+    sleep 1
   done
   for manager in ${groupManager[*]} ; do
-    gam update group $groupName add manager $manager  2> /dev/null >&2 ; sleep 2
+    $dryRun gam update group $groupName add manager $manager
+    if [ $? -ne 0 ] ; then
+      warning "Could not set '$manager' as manager of $groupName!"
+      errorManager+=1
+    fi
+    sleep 1
   done
   if [ ! -z "$groupDesc" ] ; then
-    gam update group $groupName description "${groupDesc:0:300}" 2> /dev/null >&2
+    IFS='\n' gam update group $groupName description ${groupDesc:0:300}
+    if [ $? -ne 0 ] ; then
+      warning "Could not set description on $groupName!"
+      errorDesc+=1
+    fi
   fi
 
   success "Group created: ${groupUrl}${groupName}"
-  unset groupName groupOwner groupManager groupDesc
+  if [ $errorOwner ] ; then
+      warning "Double-check group owner(s): ${groupOwner[*]}"
+  elif [ $errorManager ] ; then
+      warning "Double-check group manager(s): ${groupManager[*]}"
+  elif [ $errorDesc ] ; then
+      IFS='\n' warning "Double-check group description: '${groupDesc:0:300}'"
+  fi
+
+  if [ "$(echo ${!error*})" ] ; then
+    gam info group $groupName | grep -e ' \(name:\|owner:\|manager:\|description:\)'
+  fi
 
   if [ $ticket ] ; then
     resolve_ticket
   fi
+
+  unset groupName groupOwner groupManager groupDesc
+  unset errorOwner errorManager errorDesc
 }
 
 function resolve_ticket {
-  rt correspond $ticket -m - -s resolved 2> /dev/null << EOF
+  $dryRun rt correspond $ticket -m - -s resolved 2> /dev/null << EOF
 The '${groupName}' Google group has been created.  You can access it by visiting the following URL:
 
 ${groupUrl}${groupName}

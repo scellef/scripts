@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
+# Desccription: Script for generating .remmina files to SSH tunnel VNC console on ganeti nodes
 # Dependencies: jq, curl, genders
+# Written by scellef, 27 Apr 2017
+
 ganetiUrl="https://example.com:5080/2/instances"
 remminaDir="${HOME}/.local/share/remmina"
 
@@ -8,6 +11,12 @@ function success { IFS='\n' printf >&2 "[1;32mSUCCESS: %s[0m\n" "$*" ;}
 function warning { IFS='\n' printf >&2 "[1;33mWARNING: %s[0m\n" "$*" ;}
 function prompt { IFS='\n' printf >&2 "[1;36m%s[0m\n" "$*" ;}
 function quit { prompt "Exiting..." ; exit 0 ;}
+
+function check_dependencies {
+  command -v curl 2> /dev/null >&2 || error "'curl' not in your PATH."
+  command -v jq 2> /dev/null >&2 || error "'jq' not in your PATH."
+  command -v nodeattr 2> /dev/null >&2 || error "'nodeattr' not in your PATH."
+}
 
 if [ $@ ] ; then
   instances=("$@")

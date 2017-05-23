@@ -68,19 +68,19 @@ function count_nodes {
   nodeCount=${#nodes[*]}
 
   if   [ $nodeCount -le 4  ] ; then # 4: twobytwo
-    hsplit=1 vsplit=2 layout=twobytwo
+    hsplit=1 vsplit=2 windows=4 layout=twobytwo
   elif [ $nodeCount -le 6  ] ; then # 6: threebytwo
-    hsplit=2 vsplit=3 layout=threebytwo
+    hsplit=1 vsplit=3 windows=6 layout=threebytwo
   elif [ $nodeCount -le 9  ] ; then # 9: threebythree
-    hsplit=2 vsplit=3 layout=threebythree
+    hsplit=2 vsplit=3 windows=9 layout=threebythree
   elif [ $nodeCount -le 12 ] ; then # 12: threebyfour
-    hsplit=2 vsplit=3 layout=threebyfour
+    hsplit=3 vsplit=3 windows=12 layout=fourbythree
   elif [ $nodeCount -le 16 ] ; then # 16: fourbyfour
-    hsplit=3 vsplit=4 layout=fourbyfour
+    hsplit=3 vsplit=4 windows=16 layout=fourbyfour
   elif [ $nodeCount -le 20 ] ; then # 20: fourbyfive
-    hsplit=3 vsplit=4 layout=fourbyfive
+    hsplit=4 vsplit=4 windows=20 layout=fivebyfour
   elif [ $nodeCount -le 25 ] ; then # 25: fivebyfive
-    hsplit=4 vsplit=5 layout=fivebyfive
+    hsplit=4 vsplit=5 windows=25 layout=fivebyfive
   else
     error "Too many nodes.  Try revising your genders query."
     exit
@@ -100,9 +100,11 @@ function write_screenrc {
     let i--
   done
 
-  for ((j=0; $j<$nodeCount; j++)) ; do
-    # Make new screen window and login to the remote host
-    echo "screen -t ${nodes[$j]} ssh ${user}@${nodes[$j]}" >> $screenrcTemp
+  for ((j=0; $j<$windows; j++)) ; do
+    if [ ! -z ${nodes[$j]} ] ; then
+      # Make new screen window and login to the remote host
+      echo "screen -t ${nodes[$j]} ssh ${user}@${nodes[$j]}" >> $screenrcTemp
+    fi
 
     # Create a vertical split if we're not at the end of the row
     if [ $(( ($j+1) % $vsplit )) -ne 0 ] ; then

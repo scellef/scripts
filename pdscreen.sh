@@ -15,9 +15,11 @@ screenrcTemp="/tmp/screenrc.${USER}"
 function usage {
   cat << EOF
 Usage: pdscreen.sh <query>
+       pdscreen.sh -n <hostname> [-n <hostname] ...
        pdscreen.sh -h
 
 Options:
+  -n    Specifies the name of the host to connect to
   -h    Shows usage information
 
 Notes:
@@ -46,16 +48,17 @@ function check_dependencies {
 
 function parse_arguments {
   if [ $# -eq 0 ] ; then
-    error 'Missing argument.'
-    quit
+    error 'Missing argument.' ; exit 2
   elif [ "$1" == '-' ] ; then
     error "Unknown option: $1" ; usage ; exit 2
   else
-    while getopts "h" opt ; do
+    while getopts "hn:" opt ; do
       case $opt in
          h) usage ;;
+         n) nodes+=("$OPTARG") ;;
          *) query="$*" ;; 
          \?) error "Unknown option: -$OPTARG" ; usage ; exit 2 ;;
+         :) error "-$OPTARG requires an argument." ; usage ; exit 2 ;;
       esac
     done
   fi
@@ -64,10 +67,16 @@ function parse_arguments {
 }
 
 function count_nodes {
-  nodes=( $(nodeattr -s $query -f $gendersFile) )
+  if [ ! $nodes ] ; then
+    nodes=( $(nodeattr -s $query -f $gendersFile) )
+  fi
   nodeCount=${#nodes[*]}
 
-  if   [ $nodeCount -le 4  ] ; then # 4: twobytwo
+  if   [ $nodeCount -eq 1  ] ; then # 1: onebyone
+    warning "Only one node returned.  Just use screen." ; quit
+  elif [ $nodeCount -le 2  ] ; then # 2: onebytwo
+    hsplit=1 vsplit=1 windows=2 layout=twobyone
+  elif [ $nodeCount -le 4  ] ; then # 4: twobytwo
     hsplit=1 vsplit=2 windows=4 layout=twobytwo
   elif [ $nodeCount -le 6  ] ; then # 6: threebytwo
     hsplit=1 vsplit=3 windows=6 layout=threebytwo
@@ -89,6 +98,7 @@ function count_nodes {
 
 function write_screenrc {
   cp $screenrcDefault $screenrcTemp
+
   echo "defdynamictitle off" >> $screenrcTemp # Fix name of each window to hostname
   echo "layout autosave on" >> $screenrcTemp  # Automatically remember layout
   echo "mousetrack on" >> $screenrcTemp       # Useful to be able to mouse around larger layouts

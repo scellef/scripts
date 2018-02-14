@@ -3,7 +3,7 @@
 # Dependencies: screen, genders
 
 ### VARIABLES ###
-user="root"
+user="$USER"
 query=""
 nodes=()
 nodeCount=""
@@ -14,13 +14,14 @@ screenrcTemp="/tmp/screenrc.${USER}"
 ### DOCUMENTATION ###
 function usage {
   cat << EOF
-Usage: pdscreen.sh [-d <domain>]
-       pdscreen.sh [-d <domain>] -n <hostname> [-n <hostname> ...]
+Usage: pdscreen.sh [-d <domain>] [-u <username> ] <query>
+       pdscreen.sh [-d <domain>] [-u <username> ] -n <hostname> [-n <hostname> ...]
        pdscreen.sh -h
 
 Options:
   -n    Specifies the name of the host to connect to
   -d    Append <domain> to each hostname
+  -u    Specifies user to login to hosts as (defaults to local user)
   -h    Shows usage information
 
 Notes:
@@ -53,11 +54,12 @@ function parse_arguments {
   elif [ "$1" == '-' ] ; then
     error "Unknown option: $1" ; usage ; exit 2
   else
-    while getopts "hd:n:" opt ; do
+    while getopts "hu:d:n:" opt ; do
       case $opt in
          h) usage ;;
          n) nodes+=("$OPTARG") ;;
          d) domain="$OPTARG" ;;
+         u) user="$OPTARG" ;;
          *) query="$*" ;; 
          \?) error "Unknown option: -$OPTARG" ; usage ; exit 2 ;;
          :) error "-$OPTARG requires an argument." ; usage ; exit 2 ;;

@@ -39,7 +39,7 @@ for repo in $repos ; do
     <title>Mail Filter</title>
     <id>tag:mail.google.com,2008:filter:z0000001598970691024*8356617616940590749</id>
     <content></content>
-    <apps:property name='hasTheWord' value='list:($repo.$githubOrg')/>"
+    <apps:property name='hasTheWord' value='list:($repo.$githubOrg)'/>"
     <apps:property name='label' value='Github/$repo'/>"
     <apps:property name='shouldArchive' value='true'/>
     <apps:property name='sizeOperator' value='s_sl'/>
